@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Candidatos{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="flex justify-between items-center" style="margin-bottom:1.5rem;">
+    <div>
+      <h1>Candidatos</h1>
+      <p class="text-muted">{{ candidatos|length }} resultado(s){% if etapa_filtro %} · etapa: {{ etapa_filtro }}{% endif %}</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem;">
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+      <a href="/rh/candidatos" class="btn {% if not etapa_filtro %}btn-primary{% else %}btn-outline{% endif %} btn-sm">Todos</a>
+      {% for etapa in ['curriculo','ligacao','entrevista','testes','debriefing','evp','contratado'] %}
+      <a href="/rh/candidatos?etapa={{ etapa }}" class="btn {% if etapa_filtro == etapa %}btn-primary{% else %}btn-outline{% endif %} btn-sm">{{ etapa.replace('_',' ').title() }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    {% if not candidatos %}
+    <p class="text-muted text-sm">Nenhum candidato encontrado.</p>
+    {% else %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Candidato</th>
+            <th>Vaga</th>
+            <th>Cidade</th>
+            <th>Etapa</th>
+            <th>Cadastro</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in candidatos %}
+          <tr>
+            <td>
+              <div class="flex items-center gap-2">
+                <div class="avatar">{{ c.nome[:2].upper() }}</div>
+                <div>
+                  <div class="fw-500">{{ c.nome }}</div>
+                  <div class="text-sm text-muted">{{ c.email or '' }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="text-sm">{{ c.vaga_titulo or '—' }}</td>
+            <td class="text-sm">{{ c.cidade or '—' }}</td>
+            <td><span class="badge badge-{{ c.etapa }}">{{ c.etapa.replace('_',' ') }}</span></td>
+            <td class="text-sm text-muted">{{ c.criado_em[:10] if c.criado_em else '' }}</td>
+            <td><a href="/rh/candidatos/{{ c.id }}" class="btn btn-outline btn-sm">Abrir</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

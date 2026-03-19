@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}{{ c.nome }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div style="margin-bottom:1.5rem;">
+    <a href="/rh/candidatos" class="text-sm text-muted">← Candidatos</a>
+  </div>
+
+  <!-- Header do candidato -->
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-4">
+        <div class="avatar" style="width:52px;height:52px;font-size:18px;">{{ c.nome[:2].upper() }}</div>
+        <div>
+          <h1 style="font-size:24px;">{{ c.nome }}</h1>
+          <div class="text-muted text-sm">
+            {{ c.email or '' }}{% if c.telefone %} · {{ c.telefone }}{% endif %}{% if c.cidade %} · {{ c.cidade }}{% endif %}
+          </div>
+          <div class="mt-1">
+            <span style="font-size:12px;color:var(--muted);">Vaga:</span>
+            <strong class="text-sm">{{ c.vaga_titulo or '—' }}</strong>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge badge-{{ c.etapa }}" style="font-size:13px;padding:6px 14px;">{{ c.etapa.replace('_',' ').title() }}</span>
+        {% if c.curriculo_path %}
+        <div class="mt-2"><a href="/{{ c.curriculo_path }}" target="_blank" class="btn btn-outline btn-sm">📄 Ver currículo</a></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline visual -->
+  <div class="card card-sm" style="margin-bottom:1.5rem;">
+    <div class="pipeline">
+      {% set etapas_ordem = ['curriculo','ligacao','entrevista','testes','debriefing','evp','contratado'] %}
+      {% set etapa_atual = c.etapa %}
+      {% for e in etapas_ordem %}
+      {% set idx_atual = etapas_ordem.index(etapa_atual) if etapa_atual in etapas_ordem else -1 %}
+      {% set idx_e = etapas_ordem.index(e) %}
+      <div class="pipeline-step {% if idx_e < idx_atual %}done{% elif e == etapa_atual %}active{% endif %}">
+        {{ e.replace('_',' ').title() }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ETAPA 1: TRIAGEM CURRÍCULO + LIGAÇÃO -->
+  <div class="card" style="margin-bottom:1rem;">
+    <h3>1. Triagem de currículo + Ligação</h3>
+    {% if triagem %}
+    <div class="alert {% if triagem.resultado == 'aprovado' %}alert-success{% else %}alert-danger{% endif %} mt-2">
+      Resultado: <strong>{{ triagem.resultado.title() }}</strong>
+      {% if triagem.data_ligacao %} · {{ triagem.data_ligacao }}{% endif %}
+    </div>
+    <div class="grid-2 mt-2" style="font-size:13px;">
+      <div>✅ Disponibilidade: <strong>{% if triagem.disponibilidade %}Sim{% else %}Não{% endif %}</strong></div>
+      <div>✅ Localização: <strong>{% if triagem.localizacao %}Ok{% else %}Não{% endif %}</strong></div>
+      <div>✅ Horário da vaga: <strong>{% if triagem.horario_vaga %}Confirmado{% else %}Não{% endif %}</strong></div>
+      <div>✅ Mora na cidade: <strong>{% if triagem.mora_cidade %}Sim{% else %}Não{% endif %}</strong></div>
+      <div>✅ Salário/benefícios: <strong>{% if triagem.salario_confirmado %}Confirmado{% else %}Não{% endif %}</strong></div>
+    </div>
+    {% if triagem.observacoes %}<p class="text-sm mt-2"><strong>Obs:</strong> {{ triagem.observacoes }}</p>{% endif %}
+    {% else %}
+    {% if c.etapa == 'curriculo' or c.etapa not in ['reprovado_ligacao','reprovado_entrevista','reprovado_testes','reprovado_debriefing','recusou_evp'] %}
+    <form action="/rh/candidatos/{{ c.id }}/triagem" method="post" class="mt-2">
+      <div class="grid-2">
+        <div>
+          <div class="section-title">Critérios avaliados na ligação</div>
+          <div class="checkbox-row"><input type="checkbox" name="disponibilidade" value="1"><label>Candidato disponível imediatamente</label></div>
+          <div class="checkbox-row"><input type="checkbox" name="localizacao" value="1"><label>Localização / locomoção adequada</label></div>
+          <div class="checkbox-row"><input type="checkbox" name="horario_vaga" value="1"><label>Disponível para o horário da vaga</label></div>
+          <div class="checkbox-row"><input type="checkbox" name="mora_cidade" value="1"><label>Mora na cidade da empresa</label></div>
+          <div class="checkbox-row"><input type="checkbox" name="salario_confirmado" value="1"><label>Salário e benefícios confirmados</label></div>
+        </div>
+        <div>
+          <div class="form-group">
+            <label>Data da ligação</label>
+            <input type="date" name="data_ligacao">
+          </div>
+          <div class="form-group">
+            <label>Observações</label>
+            <textarea name="observacoes" placeholder="Anotações da ligação..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Resultado *</label>
+            <select name="resultado" required>
+              <option value="">Selecione</option>
+              <option value="aprovado">Aprovado — agendar entrevista</option>
+              <option value="reprovado">Reprovado</option>
+            </select>
+          </div>
+          <div>
+            <p class="text-sm text-muted mb-2">Dados da vaga para referência:</p>
+            <div class="text-sm">
+              <div><strong>Cidade:</strong> {{ c.vaga_cidade or '—' }}</div>
+              <div><strong>Salário:</strong> {{ c.vaga_salario or '—' }}</div>
+              <div><strong>Benefícios:</strong> {{ c.vaga_beneficios or '—' }}</div>
+              <div><strong>Horário:</strong> {{ c.vaga_horario or '—' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary mt-2">Salvar triagem / ligação</button>
+    </form>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  <!-- ETAPA 2: ENTREVISTA PRESENCIAL -->
+  <div class="card" style="margin-bottom:1rem;{% if c.etapa not in ['entrevista','testes','debriefing','evp','contratado','reprovado_entrevista','reprovado_testes','reprovado_debriefing'] %}opacity:.5;pointer-events:none;{% endif %}">
+    <h3>2. Entrevista presencial</h3>
+    {% if entrevista %}
+    <div class="alert {% if entrevista.resultado_entrevista == 'aprovado' %}alert-success{% else %}alert-danger{% endif %} mt-2">
+      Resultado: <strong>{{ entrevista.resultado_entrevista.title() }}</strong>
+      {% if entrevista.data_entrevista %} · {{ entrevista.data_entrevista }}{% endif %}
+    </div>
+    <div class="grid-2 mt-2 text-sm">
+      <div><strong>Entrevistador:</strong> {{ entrevista.entrevistador or '—' }}</div>
+      <div><strong>Nota RH:</strong> {{ entrevista.nota_entrevista_rh }}/10</div>
+    </div>
+    {% if entrevista.obs_entrevista %}<p class="text-sm mt-1"><strong>Obs:</strong> {{ entrevista.obs_entrevista }}</p>{% endif %}
+    {% elif c.etapa == 'entrevista' %}
+    <form action="/rh/candidatos/{{ c.id }}/entrevista" method="post" class="mt-2">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Data da entrevista</label>
+          <input type="date" name="data_entrevista">
+        </div>
+        <div class="form-group">
+          <label>Entrevistador (RH)</label>
+          <input type="text" name="entrevistador" placeholder="Nome do entrevistador">
+        </div>
+        <div class="form-group">
+          <label>Nota da entrevista RH (0–10)</label>
+          <input type="number" name="nota_entrevista_rh" min="0" max="10" value="7">
+        </div>
+        <div class="form-group">
+          <label>Resultado *</label>
+          <select name="resultado_entrevista" required>
+            <option value="">Selecione</option>
+            <option value="aprovado">Aprovado — enviar para testes</option>
+            <option value="reprovado">Reprovado</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Observações da entrevista</label>
+          <textarea name="obs_entrevista" placeholder="Impressões do candidato, pontos fortes e fracos..."></textarea>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Salvar entrevista</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- ETAPA 3: TESTES -->
+  <div class="card" style="margin-bottom:1rem;{% if c.etapa not in ['testes','debriefing','evp','contratado','reprovado_testes'] %}opacity:.5;pointer-events:none;{% endif %}">
+    <h3>3. Testes (comportamento, raciocínio, português, Excel)</h3>
+    {% if resultado_t %}
+    <div class="alert {% if resultado_t.aprovado %}alert-success{% else %}alert-danger{% endif %} mt-2">
+      Resultado: <strong>{% if resultado_t.aprovado %}Aprovado{% else %}Reprovado{% endif %}</strong> · Média: {{ resultado_t.nota_total }}/10
+    </div>
+    <div class="grid-4 mt-2">
+      <div class="card card-sm" style="text-align:center;"><div style="font-size:22px;font-family:'DM Serif Display',serif;">{{ resultado_t.nota_comportamento }}</div><div class="text-sm text-muted">Comportamento</div></div>
+      <div class="card card-sm" style="text-align:center;"><div style="font-size:22px;font-family:'DM Serif Display',serif;">{{ resultado_t.nota_raciocinio }}</div><div class="text-sm text-muted">Raciocínio</div></div>
+      <div class="card card-sm" style="text-align:center;"><div style="font-size:22px;font-family:'DM Serif Display',serif;">{{ resultado_t.nota_portugues }}</div><div class="text-sm text-muted">Português</div></div>
+      <div class="card card-sm" style="text-align:center;"><div style="font-size:22px;font-family:'DM Serif Display',serif;">{{ resultado_t.nota_excel }}</div><div class="text-sm text-muted">Excel</div></div>
+    </div>
+    {% elif c.etapa == 'testes' %}
+    <div class="alert alert-info mt-2">
+      Os testes são realizados pelo candidato. Compartilhe o link abaixo:
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:13px;margin-top:.5rem;">
+      http://localhost:8000/candidato/testes/{{ c.id }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ETAPA 4: DEBRIEFING COM GESTORES -->
+  <div class="card" style="margin-bottom:1rem;{% if c.etapa not in ['debriefing','evp','contratado','reprovado_debriefing'] %}opacity:.5;pointer-events:none;{% endif %}">
+    <h3>4. Debriefing com gestores</h3>
+    {% if debriefing %}
+    <div class="alert {% if debriefing.resultado == 'aprovado' %}alert-success{% else %}alert-danger{% endif %} mt-2">
+      Resultado: <strong>{{ debriefing.resultado.title() }}</strong>
+      {% if debriefing.data_debriefing %} · {{ debriefing.data_debriefing }}{% endif %}
+    </div>
+    <div class="text-sm mt-1"><strong>Gestor:</strong> {{ debriefing.gestor or '—' }}</div>
+    {% if debriefing.parecer %}<p class="text-sm mt-1"><strong>Parecer:</strong> {{ debriefing.parecer }}</p>{% endif %}
+    {% elif c.etapa == 'debriefing' %}
+    <form action="/rh/candidatos/{{ c.id }}/debriefing" method="post" class="mt-2">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Gestor participante</label>
+          <input type="text" name="gestor" placeholder="Nome do gestor">
+        </div>
+        <div class="form-group">
+          <label>Data do debriefing</label>
+          <input type="date" name="data_debriefing">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Parecer do gestor</label>
+          <textarea name="parecer" placeholder="Impressões do gestor sobre o candidato..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Resultado *</label>
+          <select name="resultado" required>
+            <option value="">Selecione</option>
+            <option value="aprovado">Aprovado — enviar EVP</option>
+            <option value="reprovado">Reprovado</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Salvar debriefing</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- ETAPA 5: EVP -->
+  <div class="card" style="margin-bottom:1rem;{% if c.etapa not in ['evp','contratado','recusou_evp'] %}opacity:.5;pointer-events:none;{% endif %}">
+    <h3>5. Proposta (EVP)</h3>
+    {% if evp %}
+    <div class="alert {% if evp.status == 'aceita' %}alert-success{% elif evp.status == 'recusada' %}alert-danger{% else %}alert-warn{% endif %} mt-2">
+      Status: <strong>{{ evp.status.title() }}</strong>
+    </div>
+    <div class="grid-2 mt-2 text-sm">
+      <div><strong>Salário ofertado:</strong> {{ evp.salario_ofertado or '—' }}</div>
+      <div><strong>Início:</strong> {{ evp.data_inicio or '—' }}</div>
+      <div style="grid-column:1/-1;"><strong>Benefícios:</strong> {{ evp.beneficios or '—' }}</div>
+    </div>
+    {% if evp.mensagem %}<p class="text-sm mt-1"><strong>Mensagem:</strong> {{ evp.mensagem }}</p>{% endif %}
+    {% if evp.status == 'enviada' %}
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+      <p class="text-sm text-muted mb-2">Registrar resposta do candidato:</p>
+      <form action="/rh/candidatos/{{ c.id }}/evp/resposta" method="post" class="flex gap-3">
+        <button name="resposta" value="aceita" class="btn btn-primary">Candidato aceitou ✓</button>
+        <button name="resposta" value="recusada" class="btn btn-outline">Candidato recusou</button>
+      </form>
+    </div>
+    {% endif %}
+    {% elif c.etapa == 'evp' %}
+    <form action="/rh/candidatos/{{ c.id }}/evp" method="post" class="mt-2">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Salário ofertado</label>
+          <input type="text" name="salario_ofertado" placeholder="Ex: R$ 4.200,00">
+        </div>
+        <div class="form-group">
+          <label>Data de início prevista</label>
+          <input type="date" name="data_inicio">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Benefícios oferecidos</label>
+          <input type="text" name="beneficios" placeholder="Ex: VT, VR, Plano de saúde, PLR">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Mensagem para o candidato</label>
+          <textarea name="mensagem" placeholder="Parabenize o candidato e forneça detalhes adicionais..."></textarea>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Enviar proposta →</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if c.etapa == 'contratado' %}
+  <div class="alert alert-success" style="font-size:16px;text-align:center;padding:1.5rem;">
+    🎉 <strong>{{ c.nome }}</strong> foi contratado(a) com sucesso!
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
