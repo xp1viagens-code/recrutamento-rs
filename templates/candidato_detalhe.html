@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ c.nome or 'Candidato' }} — RecrutaFácil</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#F7F6F2;--surface:#fff;--border:#E2E0D8;--text:#1A1916;--muted:#6B6960;--accent:#1A3A2A;--accent-light:#E8F0EB;--radius:10px; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+.nav{background:var(--accent);color:#fff;height:52px;display:flex;align-items:center;padding:0 2rem;gap:1rem;}
+.nav-brand{font-family:'DM Serif Display',serif;font-size:20px;}
+.nav a{color:rgba(255,255,255,.75);font-size:13px;text-decoration:none;}
+.nav a:hover{color:#fff;}
+.container{max-width:800px;margin:0 auto;padding:2rem 1.5rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem;}
+.section-title{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border);}
+.form-group{margin-bottom:1rem;}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em;}
+.form-group input,.form-group textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:#fff;outline:none;transition:border-color .15s;}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--accent);}
+.form-group textarea{resize:vertical;min-height:80px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{opacity:.88;}
+.btn-outline{background:transparent;border-color:var(--border);color:var(--text);}
+.btn-outline:hover{background:var(--bg);}
+.btn-danger{background:#B03A2E;color:#fff;border:none;}
+.btn-danger:hover{opacity:.88;}
+.avatar{width:52px;height:52px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;}
+.text-muted{color:var(--muted);}
+.text-sm{font-size:12px;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-brand">RecrutaFácil</span>
+  <a href="/rh">← Voltar à lista</a>
+</nav>
+
+<div class="container">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+    <div class="avatar">{{ (c.nome or '?')[:2].upper() }}</div>
+    <div>
+      <h1 style="font-family:'DM Serif Display',serif;font-size:24px;font-weight:400;">{{ c.nome or 'Sem nome' }}</h1>
+      <p class="text-muted text-sm">Cadastrado em {{ c.criado_em.strftime('%d/%m/%Y às %H:%M') if c.criado_em else '' }}</p>
+    </div>
+  </div>
+
+  <form action="/rh/candidatos/{{ c.id }}/editar" method="post">
+    <div class="card">
+      <div class="section-title">Dados pessoais</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Nome completo</label>
+          <input type="text" name="nome" value="{{ c.nome or '' }}">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" value="{{ c.email or '' }}">
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" name="telefone" value="{{ c.telefone or '' }}">
+        </div>
+        <div class="form-group">
+          <label>Cidade</label>
+          <input type="text" name="cidade" value="{{ c.cidade or '' }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Dados profissionais</div>
+      <div class="form-group">
+        <label>Formação acadêmica</label>
+        <textarea name="formacao">{{ c.formacao or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Experiências profissionais</label>
+        <textarea name="experiencias" style="min-height:120px;">{{ c.experiencias or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Habilidades e competências</label>
+        <textarea name="habilidades">{{ c.habilidades or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Resumo profissional</label>
+        <textarea name="resumo">{{ c.resumo or '' }}</textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:.75rem;justify-content:space-between;align-items:center;">
+      <form action="/rh/candidatos/{{ c.id }}/deletar" method="post" onsubmit="return confirm('Tem certeza que deseja remover este candidato?')">
+        <button type="submit" class="btn btn-danger">Remover candidato</button>
+      </form>
+      <div style="display:flex;gap:.75rem;">
+        <a href="/rh" class="btn btn-outline">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+      </div>
+    </div>
+  </form>
+
+  {% if c.curriculo_path %}
+  <div class="card" style="margin-top:1rem;">
+    <div class="section-title">Currículo original</div>
+    <a href="/{{ c.curriculo_path }}" target="_blank" class="btn btn-outline">📄 Ver PDF original</a>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

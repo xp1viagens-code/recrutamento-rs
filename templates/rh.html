@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecrutaFácil — RH</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F6F2; --surface: #fff; --border: #E2E0D8;
+  --text: #1A1916; --muted: #6B6960;
+  --accent: #1A3A2A; --accent-light: #E8F0EB;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+.nav { background: var(--accent); color: #fff; height: 52px; display: flex; align-items: center; padding: 0 2rem; gap: 1rem; }
+.nav-brand { font-family: 'DM Serif Display', serif; font-size: 20px; }
+.container { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem; }
+h1 { font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; }
+
+/* Upload zone */
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  background: var(--surface); padding: 2.5rem; text-align: center;
+  cursor: pointer; transition: all .2s; margin-bottom: 2rem;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: var(--accent-light); }
+.upload-zone input { display: none; }
+.upload-icon { font-size: 36px; margin-bottom: .75rem; }
+.upload-zone p { color: var(--muted); font-size: 13px; margin-top: .5rem; }
+.upload-zone strong { color: var(--accent); }
+
+/* Progress */
+.progress-wrap { display: none; margin-bottom: 2rem; }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: .5rem; }
+.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width .3s; border-radius: 2px; }
+.progress-label { font-size: 13px; color: var(--muted); }
+
+/* Result card */
+.result-card { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 2rem; }
+.result-card h3 { font-size: 16px; margin-bottom: 1rem; color: var(--accent); }
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .75rem; font-size: 13px; }
+.result-row { display: flex; flex-direction: column; gap: 2px; }
+.result-row span { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.result-actions { display: flex; gap: .5rem; margin-top: 1rem; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; font-family: 'DM Sans', sans-serif; transition: all .15s; text-decoration: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { opacity: .88; }
+.btn-outline { background: transparent; border-color: var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--bg); }
+
+/* Table */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.card-header h2 { font-size: 15px; font-weight: 500; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); background: var(--bg); }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-light); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; flex-shrink: 0; }
+.empty { text-align: center; padding: 3rem; color: var(--muted); }
+.badge-curriculo { background: #EEF2FF; color: #3730A3; font-size: 11px; padding: 3px 10px; border-radius: 20px; }
+.text-muted { color: var(--muted); }
+.text-sm { font-size: 12px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-brand">RecrutaFácil</span>
+</nav>
+
+<div class="container">
+  <div style="margin-bottom:1.5rem;">
+    <h1>Painel de Recrutamento</h1>
+    <p class="text-muted" style="margin-top:4px;">Faça upload de currículos para cadastrar candidatos automaticamente</p>
+  </div>
+
+  <!-- Upload Zone -->
+  <div class="upload-zone" id="dropzone" onclick="document.getElementById('file-input').click()">
+    <div class="upload-icon">📄</div>
+    <strong>Clique para selecionar ou arraste um currículo aqui</strong>
+    <p>Apenas arquivos PDF · Máx. 10MB</p>
+    <input type="file" id="file-input" accept=".pdf">
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-label" id="progress-label">Enviando arquivo...</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="result-card">
+    <h3>✅ Candidato cadastrado com sucesso</h3>
+    <div class="result-grid" id="result-grid"></div>
+    <div class="result-actions">
+      <a href="#" id="result-link" class="btn btn-primary">Ver ficha completa →</a>
+      <button class="btn btn-outline" onclick="resetUpload()">Enviar outro currículo</button>
+    </div>
+  </div>
+
+  <!-- Candidate list -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Candidatos cadastrados ({{ candidatos|length }})</h2>
+    </div>
+    {% if not candidatos %}
+    <div class="empty">Nenhum candidato cadastrado ainda.<br>Faça upload de um currículo acima.</div>
+    {% else %}
+    <table>
+      <thead>
+        <tr>
+          <th>Candidato</th>
+          <th>Cidade</th>
+          <th>Formação</th>
+          <th>Cadastrado em</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in candidatos %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar">{{ (c.nome or '?')[:2].upper() }}</div>
+              <div>
+                <div style="font-weight:500;">{{ c.nome or 'Sem nome' }}</div>
+                <div class="text-sm text-muted">{{ c.email or '' }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-sm">{{ c.cidade or '—' }}</td>
+          <td class="text-sm" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.formacao or '—' }}</td>
+          <td class="text-sm text-muted">{{ c.criado_em.strftime('%d/%m/%Y %H:%M') if c.criado_em else '' }}</td>
+          <td><a href="/rh/candidatos/{{ c.id }}" class="btn btn-outline" style="padding:5px 12px;font-size:12px;">Ver ficha</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+function handleFile(file) {
+  if (!file || !file.name.endsWith('.pdf')) {
+    alert('Por favor, envie apenas arquivos PDF.');
+    return;
+  }
+  uploadFile(file);
+}
+
+function uploadFile(file) {
+  dropzone.style.display = 'none';
+  const progressWrap = document.getElementById('progress-wrap');
+  const progressFill = document.getElementById('progress-fill');
+  const progressLabel = document.getElementById('progress-label');
+  progressWrap.style.display = 'block';
+
+  const steps = [
+    { pct: 20, label: 'Enviando arquivo...' },
+    { pct: 50, label: 'Extraindo texto do PDF...' },
+    { pct: 80, label: 'Analisando currículo com IA...' },
+    { pct: 95, label: 'Salvando dados...' },
+  ];
+  let stepIdx = 0;
+  const interval = setInterval(() => {
+    if (stepIdx < steps.length) {
+      progressFill.style.width = steps[stepIdx].pct + '%';
+      progressLabel.textContent = steps[stepIdx].label;
+      stepIdx++;
+    }
+  }, 1200);
+
+  const formData = new FormData();
+  formData.append('curriculo', file);
+
+  fetch('/rh/upload', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      clearInterval(interval);
+      progressFill.style.width = '100%';
+      progressLabel.textContent = 'Concluído!';
+      setTimeout(() => {
+        progressWrap.style.display = 'none';
+        if (data.ok) showResult(data);
+        else { alert('Erro: ' + data.erro); resetUpload(); }
+      }, 500);
+    })
+    .catch(err => {
+      clearInterval(interval);
+      alert('Erro ao enviar. Tente novamente.');
+      resetUpload();
+    });
+}
+
+function showResult(data) {
+  const card = document.getElementById('result-card');
+  const grid = document.getElementById('result-grid');
+  const link = document.getElementById('result-link');
+  const d = data.dados;
+  const fields = [
+    ['Nome', d.nome], ['Email', d.email],
+    ['Telefone', d.telefone], ['Cidade', d.cidade],
+    ['Formação', d.formacao], ['Habilidades', d.habilidades],
+  ];
+  grid.innerHTML = fields.map(([label, val]) => `
+    <div class="result-row">
+      <span>${label}</span>
+      <strong>${val || '—'}</strong>
+    </div>`).join('');
+  link.href = '/rh/candidatos/' + data.id;
+  card.style.display = 'block';
+}
+
+function resetUpload() {
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+  dropzone.style.display = 'block';
+  fileInput.value = '';
+  location.reload();
+}
+</script>
+</body>
+</html>
