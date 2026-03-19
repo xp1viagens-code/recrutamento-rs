@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Testes — {{ candidato.nome }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width:760px;">
+  <div class="page-header">
+    <h1>Testes — {{ candidato.nome }}</h1>
+    <p>Responda todas as questões e clique em Finalizar</p>
+  </div>
+
+  {% if resultado %}
+  <div class="card" style="text-align:center;padding:2rem;">
+    <div style="font-size:40px;margin-bottom:1rem;">{% if resultado.aprovado %}🎉{% else %}😔{% endif %}</div>
+    <h2>{% if resultado.aprovado %}Parabéns! Você foi aprovado nos testes.{% else %}Resultado dos testes{% endif %}</h2>
+    <div class="grid-4" style="margin-top:1.5rem;">
+      <div class="card card-sm" style="text-align:center;">
+        <div class="stat-num" style="font-size:28px;">{{ resultado.nota_comportamento }}</div>
+        <div class="text-sm text-muted">Comportamento</div>
+      </div>
+      <div class="card card-sm" style="text-align:center;">
+        <div class="stat-num" style="font-size:28px;">{{ resultado.nota_raciocinio }}</div>
+        <div class="text-sm text-muted">Raciocínio</div>
+      </div>
+      <div class="card card-sm" style="text-align:center;">
+        <div class="stat-num" style="font-size:28px;">{{ resultado.nota_portugues }}</div>
+        <div class="text-sm text-muted">Português</div>
+      </div>
+      <div class="card card-sm" style="text-align:center;">
+        <div class="stat-num" style="font-size:28px;">{{ resultado.nota_excel }}</div>
+        <div class="text-sm text-muted">Excel</div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;font-size:22px;font-family:'DM Serif Display',serif;">
+      Média geral: <strong>{{ resultado.nota_total }}</strong>/10
+    </div>
+  </div>
+  {% else %}
+
+  {% set tipos = [("comportamento","Comportamento"),("raciocinio","Raciocínio Lógico"),("portugues","Português"),("excel","Excel")] %}
+  <form action="/candidato/testes/{{ candidato.id }}/responder" method="post">
+    {% for tipo_key, tipo_label in tipos %}
+    {% set questoes_tipo = testes | selectattr("tipo","equalto",tipo_key) | list %}
+    {% if questoes_tipo %}
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="section-title">{{ tipo_label }}</div>
+      {% for t in questoes_tipo %}
+      {% set opts = t.opcoes | tojson | fromjson %}
+      <div style="margin-bottom:1.25rem;">
+        <p class="fw-500 mb-2">{{ loop.index }}. {{ t.questao }}</p>
+        {% for letra, opt in [("A", opts[0]), ("B", opts[1]), ("C", opts[2]), ("D", opts[3])] %}
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;margin-bottom:4px;border:1px solid var(--border);transition:background .15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+          <input type="radio" name="teste_{{ t.id }}" value="{{ letra }}" required style="margin-top:2px;accent-color:var(--accent);">
+          <span><strong>{{ letra }})</strong> {{ opt }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;">Finalizar testes →</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
