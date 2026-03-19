@@ -349,16 +349,10 @@ def resposta_evp(cid):
     conn.commit(); conn.close()
     return redirect(url_for('candidato_detalhe', cid=cid))
 
-@app.route('/rh/candidatos/<int:cid>/evp/resposta', methods=['POST'])
-def resposta_evp(cid):
-    resposta = request.form['resposta']
-    conn = get_db()
-    conn.execute("UPDATE evp SET resposta_candidato=?, status=?, data_resposta=? WHERE candidato_id=?",
-                 (resposta, resposta, datetime.now().strftime("%Y-%m-%d"), cid))
-    etapa = "contratado" if resposta == "aceita" else "recusou_evp"
-    conn.execute("UPDATE candidatos SET etapa=? WHERE id=?", (etapa, cid))
-    conn.commit(); conn.close()
-    return redirect(url_for('candidato_detalhe', cid=cid))
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8000))
+    app.run(debug=False, host='0.0.0.0', port=port)
+
 
 @app.route('/admin/seed-candidatos')
 def seed_candidatos():
@@ -366,13 +360,13 @@ def seed_candidatos():
     vaga = conn.execute("SELECT id FROM vagas WHERE titulo LIKE '%missor%' OR titulo LIKE '%assagem%'").fetchone()
     if not vaga:
         conn.close()
-        return "Vaga não encontrada", 404
+        return "Vaga nao encontrada", 404
     candidatos = [
         ("Ivana Larissa Alves de Sousa","Ivana.larissa13@hotmail.com","(81) 99734-2264","Caruaru, PE"),
         ("Wisleandro Maciel de Lima Macedo","wisleandromaciel9@hotmail.com","(81) 99392-7779","Caruaru, PE"),
         ("Yasmim Harumi Tanaka","Kimikotanaka234@gmail.com","(81) 98912-7610","Caruaru, PE"),
-        ("Ariel Cavalcante","arixtincavalcante@gmail.com","(81) 921409217","Divinópolis"),
-        ("Jhonatta Douglas Basílio dos Santos","jhonatta1997@hotmail.com","(81) 99153-6698","Caruaru, PE"),
+        ("Ariel Cavalcante","arixtincavalcante@gmail.com","(81) 921409217","Divinopolis"),
+        ("Jhonatta Douglas Basilio dos Santos","jhonatta1997@hotmail.com","(81) 99153-6698","Caruaru, PE"),
     ]
     inseridos = []
     for nome, email, tel, cidade in candidatos:
@@ -383,8 +377,6 @@ def seed_candidatos():
             inseridos.append(nome)
     conn.commit()
     conn.close()
-    return f"✅ {len(inseridos)} inserido(s): " + ", ".join(inseridos) if inseridos else "⚠️ Todos já cadastrados."
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    if inseridos:
+        return "OK: " + ", ".join(inseridos)
+    return "Todos ja cadastrados."
