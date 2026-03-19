@@ -447,10 +447,10 @@ def resposta_evp(cid):
 @app.route('/admin/seed-candidatos')
 def seed_candidatos():
     conn = get_db()
-    vaga = fetchone(conn, "SELECT id FROM vagas WHERE titulo ILIKE '%emissor%' OR titulo ILIKE '%passagem%'")
-    if not vaga:
-        conn.close()
-        return "Vaga nao encontrada. Crie a vaga primeiro em /rh/vagas/nova", 404
+    vaga = fetchone(conn, "SELECT id FROM vagas ORDER BY id DESC LIMIT 1")
+if not vaga:
+    conn.close()
+    return "Nenhuma vaga cadastrada. Acesse /rh/vagas/nova primeiro.", 404
     candidatos = [
         ("Ivana Larissa Alves de Sousa","Ivana.larissa13@hotmail.com","(81) 99734-2264","Caruaru, PE"),
         ("Wisleandro Maciel de Lima Macedo","wisleandromaciel9@hotmail.com","(81) 99392-7779","Caruaru, PE"),
